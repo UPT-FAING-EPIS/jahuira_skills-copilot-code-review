@@ -568,6 +568,22 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `
         }
+        <div class="share-container">
+          <button class="share-button" data-activity="${name}" aria-label="Share this activity" title="Share this activity">
+            <span>🔗</span> Share
+          </button>
+          <div class="share-menu hidden" role="menu" aria-label="Share options">
+            <a class="share-option share-twitter" href="#" data-activity="${name}" role="menuitem">
+              <span>𝕏</span> Twitter/X
+            </a>
+            <a class="share-option share-whatsapp" href="#" data-activity="${name}" role="menuitem">
+              <span>💬</span> WhatsApp
+            </a>
+            <button class="share-option share-copy" data-activity="${name}" role="menuitem">
+              <span>📋</span> Copy Link
+            </button>
+          </div>
+        </div>
       </div>
     `;
 
@@ -586,6 +602,59 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    // Add share button handlers
+    const shareButton = activityCard.querySelector(".share-button");
+    const shareMenu = activityCard.querySelector(".share-menu");
+    const shareUrl = `${window.location.origin}${window.location.pathname}`;
+    const shareText = `Check out "${name}" at Mergington High School! ${details.description}`;
+
+    shareButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (navigator.share) {
+        navigator.share({ title: name, text: shareText, url: shareUrl }).catch(() => {});
+      } else {
+        // Toggle the fallback share menu
+        const isHidden = shareMenu.classList.contains("hidden");
+        // Close all other open share menus
+        document.querySelectorAll(".share-menu").forEach((m) => m.classList.add("hidden"));
+        if (isHidden) {
+          shareMenu.classList.remove("hidden");
+        }
+      }
+    });
+
+    // Twitter/X share
+    const twitterLink = activityCard.querySelector(".share-twitter");
+    twitterLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+      window.open(twitterUrl, "_blank", "noopener,noreferrer");
+      shareMenu.classList.add("hidden");
+    });
+
+    // WhatsApp share
+    const whatsappLink = activityCard.querySelector(".share-whatsapp");
+    whatsappLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + " " + shareUrl)}`;
+      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      shareMenu.classList.add("hidden");
+    });
+
+    // Copy link
+    const copyButton = activityCard.querySelector(".share-copy");
+    copyButton.addEventListener("click", () => {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        copyButton.textContent = "✅ Copied!";
+        setTimeout(() => {
+          copyButton.innerHTML = "<span>📋</span> Copy Link";
+        }, 2000);
+      }).catch(() => {
+        showMessage("Could not copy link. Please copy it manually.", "error");
+      });
+      shareMenu.classList.add("hidden");
+    });
 
     activitiesList.appendChild(activityCard);
   }
@@ -860,6 +929,11 @@ document.addEventListener("DOMContentLoaded", () => {
     setDayFilter,
     setTimeRangeFilter,
   };
+
+  // Close share menus when clicking outside
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".share-menu").forEach((m) => m.classList.add("hidden"));
+  });
 
   // Initialize app
   checkAuthentication();
