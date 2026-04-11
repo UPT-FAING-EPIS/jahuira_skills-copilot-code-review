@@ -606,13 +606,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // Add share button handlers
     const shareButton = activityCard.querySelector(".share-button");
     const shareMenu = activityCard.querySelector(".share-menu");
-    const shareUrl = `${window.location.origin}${window.location.pathname}`;
-    const shareText = `Check out "${name}" at Mergington High School! ${details.description}`;
+    const shareUrl = `${window.location.origin}${window.location.pathname}?activity=${encodeURIComponent(name)}`;
+    const shareText = `Check out "${name}" at Mergington High School!`;
+    const shareTextLong = `${shareText} ${details.description}`;
 
     shareButton.addEventListener("click", (event) => {
       event.stopPropagation();
       if (navigator.share) {
-        navigator.share({ title: name, text: shareText, url: shareUrl }).catch(() => {});
+        navigator.share({ title: name, text: shareText, url: shareUrl }).catch((err) => {
+          if (err.name !== "AbortError") {
+            console.error("Share failed:", err);
+          }
+        });
       } else {
         // Toggle the fallback share menu
         const isHidden = shareMenu.classList.contains("hidden");
@@ -637,7 +642,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const whatsappLink = activityCard.querySelector(".share-whatsapp");
     whatsappLink.addEventListener("click", (event) => {
       event.preventDefault();
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + " " + shareUrl)}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareTextLong + " " + shareUrl)}`;
       window.open(whatsappUrl, "_blank", "noopener,noreferrer");
       shareMenu.classList.add("hidden");
     });
@@ -646,7 +651,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const copyButton = activityCard.querySelector(".share-copy");
     copyButton.addEventListener("click", () => {
       navigator.clipboard.writeText(shareUrl).then(() => {
-        copyButton.textContent = "✅ Copied!";
+        copyButton.innerHTML = "<span>✅</span> Copied!";
         setTimeout(() => {
           copyButton.innerHTML = "<span>📋</span> Copy Link";
         }, 2000);
